@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lms-backend
+  namespace: lms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lms-backend
+  template:
+    metadata:
+      labels:
+        app: lms-backend
+    spec:
+      containers:
+      - name: lms-backend
+        image: <your-docker-username>/lms-backend:latest
+        env:
+        - name: POSTGRES_HOST
+          value: "postgres"
+        ports:
+        - containerPort: 8000
