@@ -1,0 +1,39 @@
+name: CI-CD-Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-push-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build backend
+      run: |
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/lms-backend:latest -f docker/Dockerfile-backend .
+        docker push ${{ secrets.DOCKER_USERNAME }}/lms-backend:latest
+
+    - name: Build frontend
+      run: |
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/lms-frontend:latest -f docker/Dockerfile-frontend .
+        docker push ${{ secrets.DOCKER_USERNAME }}/lms-frontend:latest
+
+    - name: Copy kube config
+      run: |
+        mkdir ~/.kube
+        echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+
+    - name: Deploy to k3s
+      run: |
+        kubectl apply -f k8s/
+        kubectl rollout restart deployment/lms-backend -n lms
